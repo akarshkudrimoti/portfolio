@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Terminal, ITheme, ITerminalOptions } from '@xterm/xterm';
+import React, { useEffect, useRef, useState } from 'react';
+import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { SearchAddon } from '@xterm/addon-search';
+import { ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import React from 'react';
 
 interface TerminalComponentProps {
   onClose: () => void;
@@ -20,7 +23,7 @@ interface Project {
 
 export default function TerminalComponent({ onClose }: TerminalComponentProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const terminalInstanceRef = useRef<Terminal | null>(null);
+  const terminalInstanceRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<InstanceType<typeof FitAddon> | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [showProject, setShowProject] = useState<Project | null>(null);
@@ -80,11 +83,7 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
   useEffect(() => {
     if (!terminalRef.current) return;
 
-    // Initialize terminal with minimal options
-    const term = new Terminal({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+    const terminal = new XTerm({
       theme: {
         background: '#000000',
         foreground: '#00ff00',
@@ -107,23 +106,23 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
         brightCyan: '#00ffff',
         brightWhite: '#ffffff',
       } as ITheme,
-      rows: 30,
-      cols: 100,
-      allowProposedApi: true
-    } as ITerminalOptions);
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontSize: 14,
+      cursorBlink: true,
+    });
 
     // Initialize addon
     const fitAddon = new FitAddon();
-    term.loadAddon(fitAddon);
+    terminal.loadAddon(fitAddon);
 
     // Store references
-    terminalInstanceRef.current = term;
+    terminalInstanceRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
     // Open terminal in the container
     const terminalElement = terminalRef.current;
     if (terminalElement) {
-      term.open(terminalElement);
+      terminal.open(terminalElement);
       
       // Set mounted state after a short delay to ensure DOM is ready
       setTimeout(() => {
@@ -138,13 +137,13 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
           const loadingChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
           let loadingIndex = 0;
           const loadingInterval = setInterval(() => {
-            term.write('\x1b[H'); // Move cursor to home position
-            term.write('\x1b[2J'); // Clear screen
-            term.write(`\x1b[1;32m${loadingChars[loadingIndex]} Initializing Matrix Terminal...\x1b[0m\r\n`);
-            term.write(`\x1b[1;33m${loadingChars[loadingIndex]} Loading system modules...\x1b[0m\r\n`);
-            term.write(`\x1b[1;36m${loadingChars[loadingIndex]} Establishing secure connection...\x1b[0m\r\n`);
-            term.write(`\x1b[1;35m${loadingChars[loadingIndex]} Authenticating user...\x1b[0m\r\n`);
-            term.write(`\x1b[1;31m${loadingChars[loadingIndex]} Accessing mainframe...\x1b[0m\r\n`);
+            terminal.write('\x1b[H'); // Move cursor to home position
+            terminal.write('\x1b[2J'); // Clear screen
+            terminal.write(`\x1b[1;32m${loadingChars[loadingIndex]} Initializing Matrix Terminal...\x1b[0m\r\n`);
+            terminal.write(`\x1b[1;33m${loadingChars[loadingIndex]} Loading system modules...\x1b[0m\r\n`);
+            terminal.write(`\x1b[1;36m${loadingChars[loadingIndex]} Establishing secure connection...\x1b[0m\r\n`);
+            terminal.write(`\x1b[1;35m${loadingChars[loadingIndex]} Authenticating user...\x1b[0m\r\n`);
+            terminal.write(`\x1b[1;31m${loadingChars[loadingIndex]} Accessing mainframe...\x1b[0m\r\n`);
             
             loadingIndex = (loadingIndex + 1) % loadingChars.length;
           }, 100);
@@ -152,8 +151,8 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
           // After loading animation, show welcome message
           setTimeout(() => {
             clearInterval(loadingInterval);
-            term.write('\x1b[H'); // Move cursor to home position
-            term.write('\x1b[2J'); // Clear screen
+            terminal.write('\x1b[H'); // Move cursor to home position
+            terminal.write('\x1b[2J'); // Clear screen
             
             typeText('\x1b[1;32mWelcome to the Matrix Terminal\x1b[0m\r\n', () => {
               typeText('\x1b[1;33mWelcome guest!\x1b[0m\r\n', () => {
@@ -169,12 +168,12 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
           }, 2000);
         } else {
           // If animation has already played, just show the prompt
-          term.write('\x1b[H'); // Move cursor to home position
-          term.write('\x1b[2J'); // Clear screen
-          term.write('\x1b[1;32mWelcome to the Matrix Terminal\x1b[0m\r\n');
-          term.write('\x1b[1;33mWelcome guest!\x1b[0m\r\n');
-          term.write('\x1b[1;33mType \x1b[1;36mhelp\x1b[1;33m to see available commands\x1b[0m\r\n');
-          term.write('\r\n');
+          terminal.write('\x1b[H'); // Move cursor to home position
+          terminal.write('\x1b[2J'); // Clear screen
+          terminal.write('\x1b[1;32mWelcome to the Matrix Terminal\x1b[0m\r\n');
+          terminal.write('\x1b[1;33mWelcome guest!\x1b[0m\r\n');
+          terminal.write('\x1b[1;33mType \x1b[1;36mhelp\x1b[1;33m to see available commands\x1b[0m\r\n');
+          terminal.write('\r\n');
           setIsLoading(false);
           writePrompt();
         }
@@ -191,11 +190,11 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
 
     // Handle user input
     let currentInput = '';
-    term.onKey(({ key, domEvent }) => {
+    terminal.onKey(({ key, domEvent }) => {
       const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
       if (domEvent.keyCode === 13) { // Enter
-        term.write('\r\n');
+        terminal.write('\r\n');
         if (currentInput.trim()) {
           // Process the command
           const command = currentInput.trim().toLowerCase();
@@ -207,7 +206,7 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
             if (project) {
               setShowProject(project);
               setShowGoogleScreen(true);
-              term.writeln(`\x1b[1;32mOpening ${project.name} in browser...\x1b[0m`);
+              terminal.writeln(`\x1b[1;32mOpening ${project.name} in browser...\x1b[0m`);
               writePrompt();
               currentInput = '';
               return;
@@ -216,93 +215,93 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
           
           switch (command) {
             case 'help':
-              term.writeln('\x1b[1;32mAvailable commands:\x1b[0m');
-              term.writeln('  \x1b[1;33mhelp\x1b[0m     - Show this help message');
-              term.writeln('  \x1b[1;33mabout\x1b[0m    - Learn about me');
-              term.writeln('  \x1b[1;33mskills\x1b[0m   - View my technical skills');
-              term.writeln('  \x1b[1;33mprojects\x1b[0m - View my projects');
-              term.writeln('  \x1b[1;33mcontact\x1b[0m  - Get my contact information');
-              term.writeln('  \x1b[1;33mclear\x1b[0m    - Clear the terminal');
-              term.writeln('  \x1b[1;33mexit\x1b[0m     - Close the terminal');
-              term.writeln('  \x1b[1;33mls\x1b[0m       - List directory contents');
-              term.writeln('  \x1b[1;33mpwd\x1b[0m      - Print working directory');
-              term.writeln('  \x1b[1;33mwhoami\x1b[0m   - Display current user');
-              term.writeln('  \x1b[1;33mneofetch\x1b[0m - Display system information');
+              terminal.writeln('\x1b[1;32mAvailable commands:\x1b[0m');
+              terminal.writeln('  \x1b[1;33mhelp\x1b[0m     - Show this help message');
+              terminal.writeln('  \x1b[1;33mabout\x1b[0m    - Learn about me');
+              terminal.writeln('  \x1b[1;33mskills\x1b[0m   - View my technical skills');
+              terminal.writeln('  \x1b[1;33mprojects\x1b[0m - View my projects');
+              terminal.writeln('  \x1b[1;33mcontact\x1b[0m  - Get my contact information');
+              terminal.writeln('  \x1b[1;33mclear\x1b[0m    - Clear the terminal');
+              terminal.writeln('  \x1b[1;33mexit\x1b[0m     - Close the terminal');
+              terminal.writeln('  \x1b[1;33mls\x1b[0m       - List directory contents');
+              terminal.writeln('  \x1b[1;33mpwd\x1b[0m      - Print working directory');
+              terminal.writeln('  \x1b[1;33mwhoami\x1b[0m   - Display current user');
+              terminal.writeln('  \x1b[1;33mneofetch\x1b[0m - Display system information');
               break;
             case 'about':
-              term.writeln('\x1b[1;32mAbout Me:\x1b[0m');
-              term.writeln('I love solving problems. Brain teasers, algorithms, random logic puzzles—I do them every day, just for fun.');
-              term.writeln('There\'s something addicting about breaking something complex down, finding the best solution, and knowing I cracked the code.');
+              terminal.writeln('\x1b[1;32mAbout Me:\x1b[0m');
+              terminal.writeln('I love solving problems. Brain teasers, algorithms, random logic puzzles—I do them every day, just for fun.');
+              terminal.writeln('There\'s something addicting about breaking something complex down, finding the best solution, and knowing I cracked the code.');
               break;
             case 'skills':
-              term.writeln('\x1b[1;32mTechnical Skills:\x1b[0m');
-              term.writeln('  \x1b[1;33mFrontend:\x1b[0m React.js, Next.js, TypeScript, Tailwind CSS, Framer Motion');
-              term.writeln('  \x1b[1;33mBackend:\x1b[0m Node.js, Express.js, Python, Java');
-              term.writeln('  \x1b[1;33mDatabase:\x1b[0m MongoDB, PostgreSQL, Firebase');
+              terminal.writeln('\x1b[1;32mTechnical Skills:\x1b[0m');
+              terminal.writeln('  \x1b[1;33mFrontend:\x1b[0m React.js, Next.js, TypeScript, Tailwind CSS, Framer Motion');
+              terminal.writeln('  \x1b[1;33mBackend:\x1b[0m Node.js, Express.js, Python, Java');
+              terminal.writeln('  \x1b[1;33mDatabase:\x1b[0m MongoDB, PostgreSQL, Firebase');
               break;
             case 'projects':
-              term.writeln('\x1b[1;32mFeatured Projects:\x1b[0m');
-              term.writeln('');
-              term.writeln('  \x1b[1;33m1. Fraction Dash\x1b[0m');
-              term.writeln('     A gamified educational platform that combines typing speed with fraction math problems.');
-              term.writeln('');
-              term.writeln('  \x1b[1;33m2. Snake AI\x1b[0m');
-              term.writeln('     An implementation of the classic Snake game with an AI agent trained using reinforcement learning.');
-              term.writeln('');
-              term.writeln('  \x1b[1;33m3. STORM Robotics FRC\x1b[0m');
-              term.writeln('     Led the computer science team for STORM Robotics, a competitive FIRST Robotics Competition team.');
-              term.writeln('');
-              term.writeln('\x1b[1;32mSelect a project to view details (1-3):\x1b[0m');
+              terminal.writeln('\x1b[1;32mFeatured Projects:\x1b[0m');
+              terminal.writeln('');
+              terminal.writeln('  \x1b[1;33m1. Fraction Dash\x1b[0m');
+              terminal.writeln('     A gamified educational platform that combines typing speed with fraction math problems.');
+              terminal.writeln('');
+              terminal.writeln('  \x1b[1;33m2. Snake AI\x1b[0m');
+              terminal.writeln('     An implementation of the classic Snake game with an AI agent trained using reinforcement learning.');
+              terminal.writeln('');
+              terminal.writeln('  \x1b[1;33m3. STORM Robotics FRC\x1b[0m');
+              terminal.writeln('     Led the computer science team for STORM Robotics, a competitive FIRST Robotics Competition team.');
+              terminal.writeln('');
+              terminal.writeln('\x1b[1;32mSelect a project to view details (1-3):\x1b[0m');
               break;
             case 'contact':
-              term.writeln('\x1b[1;32mContact Information:\x1b[0m');
-              term.writeln('  Email: \x1b[1;33makudrimoti1@gmail.com\x1b[0m');
-              term.writeln('  Phone: \x1b[1;33m(404)-426-6523\x1b[0m');
-              term.writeln('  LinkedIn: \x1b[1;33mlinkedin.com/in/akudrimoti\x1b[0m');
-              term.writeln('  GitHub: \x1b[1;33mgithub.com/akarshkudrimoti\x1b[0m');
+              terminal.writeln('\x1b[1;32mContact Information:\x1b[0m');
+              terminal.writeln('  Email: \x1b[1;33makudrimoti1@gmail.com\x1b[0m');
+              terminal.writeln('  Phone: \x1b[1;33m(404)-426-6523\x1b[0m');
+              terminal.writeln('  LinkedIn: \x1b[1;33mlinkedin.com/in/akudrimoti\x1b[0m');
+              terminal.writeln('  GitHub: \x1b[1;33mgithub.com/akarshkudrimoti\x1b[0m');
               break;
             case 'clear':
-              term.write('\x1b[2J\x1b[H');
-              term.write('\x1b[1;32mWelcome to the Matrix Terminal\x1b[0m\r\n');
-              term.write('Type \x1b[1;33mhelp\x1b[0m to see available commands\r\n');
-              term.write('\r\n');
+              terminal.write('\x1b[2J\x1b[H');
+              terminal.write('\x1b[1;32mWelcome to the Matrix Terminal\x1b[0m\r\n');
+              terminal.write('Type \x1b[1;33mhelp\x1b[0m to see available commands\r\n');
+              terminal.write('\r\n');
               writePrompt();
               break;
             case 'exit':
               onClose();
               return;
             case 'ls':
-              term.writeln('\x1b[1;34mDocuments\x1b[0m  \x1b[1;32mProjects\x1b[0m  \x1b[1;33mDownloads\x1b[0m  \x1b[1;35mPictures\x1b[0m');
+              terminal.writeln('\x1b[1;34mDocuments\x1b[0m  \x1b[1;32mProjects\x1b[0m  \x1b[1;33mDownloads\x1b[0m  \x1b[1;35mPictures\x1b[0m');
               break;
             case 'pwd':
-              term.writeln(`/${currentUser}/${currentPath}`);
+              terminal.writeln(`/${currentUser}/${currentPath}`);
               break;
             case 'whoami':
-              term.writeln(currentUser);
+              terminal.writeln(currentUser);
               break;
             case 'neofetch':
-              term.writeln('\x1b[1;32m       _\x1b[0m');
-              term.writeln('\x1b[1;32m      / \\\x1b[0m');
-              term.writeln('\x1b[1;32m     /   \\\x1b[0m');
-              term.writeln('\x1b[1;32m    /     \\\x1b[0m');
-              term.writeln('\x1b[1;32m   /       \\\x1b[0m');
-              term.writeln('\x1b[1;32m  /         \\\x1b[0m');
-              term.writeln('\x1b[1;32m /           \\\x1b[0m');
-              term.writeln('\x1b[1;32m/_____________\\\x1b[0m');
-              term.writeln('');
-              term.writeln(`\x1b[1;33mOS:\x1b[0m MatrixOS v1.0`);
-              term.writeln(`\x1b[1;33mHost:\x1b[0m ${currentHost}`);
-              term.writeln(`\x1b[1;33mKernel:\x1b[0m 5.15.0-matrix`);
-              term.writeln(`\x1b[1;33mUptime:\x1b[0m 42 days, 7 hours`);
-              term.writeln(`\x1b[1;33mPackages:\x1b[0m 1337`);
-              term.writeln(`\x1b[1;33mShell:\x1b[0m zsh 5.8`);
-              term.writeln(`\x1b[1;33mTerminal:\x1b[0m xterm-256color`);
-              term.writeln(`\x1b[1;33mCPU:\x1b[0m Quantum Processor`);
-              term.writeln(`\x1b[1;33mMemory:\x1b[0m 16GB / 32GB`);
+              terminal.writeln('\x1b[1;32m       _\x1b[0m');
+              terminal.writeln('\x1b[1;32m      / \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m     /   \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m    /     \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m   /       \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m  /         \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m /           \\\x1b[0m');
+              terminal.writeln('\x1b[1;32m/_____________\\\x1b[0m');
+              terminal.writeln('');
+              terminal.writeln(`\x1b[1;33mOS:\x1b[0m MatrixOS v1.0`);
+              terminal.writeln(`\x1b[1;33mHost:\x1b[0m ${currentHost}`);
+              terminal.writeln(`\x1b[1;33mKernel:\x1b[0m 5.15.0-matrix`);
+              terminal.writeln(`\x1b[1;33mUptime:\x1b[0m 42 days, 7 hours`);
+              terminal.writeln(`\x1b[1;33mPackages:\x1b[0m 1337`);
+              terminal.writeln(`\x1b[1;33mShell:\x1b[0m zsh 5.8`);
+              terminal.writeln(`\x1b[1;33mTerminal:\x1b[0m xterm-256color`);
+              terminal.writeln(`\x1b[1;33mCPU:\x1b[0m Quantum Processor`);
+              terminal.writeln(`\x1b[1;33mMemory:\x1b[0m 16GB / 32GB`);
               break;
             default:
-              term.writeln(`\x1b[1;31mCommand not found: ${currentInput}\x1b[0m`);
-              term.writeln('Type \x1b[1;33mhelp\x1b[0m to see available commands.');
+              terminal.writeln(`\x1b[1;31mCommand not found: ${currentInput}\x1b[0m`);
+              terminal.writeln('Type \x1b[1;33mhelp\x1b[0m to see available commands.');
           }
         }
         writePrompt();
@@ -310,11 +309,11 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
       } else if (domEvent.keyCode === 8) { // Backspace
         if (currentInput.length > 0) {
           currentInput = currentInput.slice(0, -1);
-          term.write('\b \b');
+          terminal.write('\b \b');
         }
       } else if (printable) {
         currentInput += key;
-        term.write(key);
+        terminal.write(key);
       }
     });
 
@@ -327,7 +326,7 @@ export default function TerminalComponent({ onClose }: TerminalComponentProps) {
           terminalInstanceRef.current.dispose();
         }
       }
-      term.dispose();
+      terminal.dispose();
     };
   }, [onClose, projects, currentUser, currentHost, currentPath, animationPlayed]);
 
