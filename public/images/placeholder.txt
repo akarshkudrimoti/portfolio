@@ -1,0 +1,8 @@
+This directory contains project images.
+
+Please replace the following placeholder images with actual project screenshots:
+- fraction-dash.jpg
+- snake-ai.jpg
+- robotics-frc.jpg
+
+The images should be high-quality and representative of each project. 
